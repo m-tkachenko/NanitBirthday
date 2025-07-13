@@ -14,6 +14,7 @@ appcompat = "1.7.1"
 
 # Compose
 composeBom = "2025.06.01"
+materialIconsExtended = "1.7.8"
 navigation-compose = "2.9.1"
 
 # Image Loading
@@ -54,6 +55,7 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 
 # Compose BOM & UI
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
