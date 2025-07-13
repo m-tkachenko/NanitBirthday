@@ -66,6 +66,12 @@ interface BabyDao {
         id: Long = BabyEntity.SINGLE_BABY_ID
     )
 
+    /**
+     * Updates only the baby's birthday date.
+     *
+     * @param birthday New birthday date
+     * @param id Baby ID (defaults to single baby ID)
+     */
     @Query("""
         UPDATE baby
         SET birthday = :birthday

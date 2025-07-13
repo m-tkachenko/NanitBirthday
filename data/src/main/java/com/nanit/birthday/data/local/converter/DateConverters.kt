@@ -1,7 +1,10 @@
 package com.nanit.birthday.data.local.converter
 
 import androidx.room.TypeConverter
+import com.nanit.birthday.data.local.converter.exception.DateConversionException
 import kotlinx.datetime.LocalDate
+import java.time.format.DateTimeParseException
+
 /**
  * Type converters for Room database to handle custom data types.
  *
@@ -29,12 +32,28 @@ class DateConverters {
      * @throws IllegalArgumentException if the string format is invalid
      */
     @TypeConverter
-    fun toLocalDate(dateString: String?) =
-        dateString?.let {
-            try {
-                LocalDate.parse(it)
-            } catch (_: Exception) {
-                null
-            }
+    fun toLocalDate(dateString: String?): LocalDate? {
+        if (dateString.isNullOrBlank()) return null
+
+        return try {
+            LocalDate.parse(dateString.trim())
+        } catch (exception: DateTimeParseException) {
+            throw DateTimeParseException(
+                "Invalid date format: '$dateString'. Expected format: $DATE_FORMAT",
+                exception.toString(),
+                exception.errorIndex
+            )
+        } catch (exception: IllegalArgumentException) {
+            throw DateConversionException(
+                "Invalid date format: '$dateString'. Expected format: $DATE_FORMAT",
+                exception
+            )
         }
+    }
+
+    companion object {
+        // ISO-8601 format for consistent date storage
+        private const val DATE_FORMAT = "yyyy-MM-dd"
+
+    }
 }
