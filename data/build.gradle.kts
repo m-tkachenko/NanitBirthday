@@ -45,6 +45,9 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":core"))
 
+    // Date/time utilities
+    implementation(libs.kotlinx.datetime)
+
     // Room database
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
