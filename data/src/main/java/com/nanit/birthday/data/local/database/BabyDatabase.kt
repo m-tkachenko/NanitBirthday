@@ -1,4 +1,4 @@
-package com.nanit.birthday.data.local
+package com.nanit.birthday.data.local.database
 
 import android.content.Context
 import androidx.room.Database

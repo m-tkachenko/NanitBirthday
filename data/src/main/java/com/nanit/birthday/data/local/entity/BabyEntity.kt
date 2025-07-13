@@ -28,6 +28,6 @@ data class BabyEntity(
     val pictureUri: String? = null,
 ) {
     companion object {
-        const val SINGLE_BABY_ID = 1L
+        private const val SINGLE_BABY_ID = 1L
     }
 }
