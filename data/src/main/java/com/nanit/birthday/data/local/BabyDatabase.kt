@@ -9,6 +9,15 @@ import com.nanit.birthday.data.local.converter.DateConverters
 import com.nanit.birthday.data.local.dao.BabyDao
 import com.nanit.birthday.data.local.entity.BabyEntity
 
+/**
+ * Room database for the Nanit Birthday app.
+ *
+ * This database stores baby information including:
+ * - Profile data (name, birthday, picture)
+ *
+ * Version History:
+ * - v1: Initial schema with BabyEntity
+ */
 @Database(
     entities = [BabyEntity::class],
     version = 1,
@@ -21,14 +30,23 @@ abstract class BabyDatabase : RoomDatabase() {
     companion object {
         const val DATABASE_NAME = "nanit_baby_birthday_database"
 
-        fun create(context: Context): BabyDatabase =
+        @Volatile
+        private var INSTANCE: BabyDatabase? = null
+
+        fun getInstance(context: Context): BabyDatabase {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: buildDatabase(context).also { INSTANCE = it }
+            }
+        }
+
+        private fun buildDatabase(context: Context): BabyDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
                 BabyDatabase::class.java,
                 DATABASE_NAME
             )
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
-                .fallbackToDestructiveMigration(true)
+                .fallbackToDestructiveMigration(false)
                 .build()
     }
 }
