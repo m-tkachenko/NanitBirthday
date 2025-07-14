@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.nanit.birthday.presentation.screens.details.DetailsScreen
+import com.nanit.birthday.presentation.navigation.BirthdayNavigation
 import com.nanit.birthday.presentation.theme.NanitBirthdayTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             NanitBirthdayTheme {
-                DetailsScreen()
+                BirthdayNavigation()
             }
         }
     }

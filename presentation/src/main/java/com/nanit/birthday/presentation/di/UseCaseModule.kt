@@ -5,6 +5,7 @@ import com.nanit.birthday.domain.repository.BabyRepository
 import com.nanit.birthday.domain.usecases.BabyExistsUseCase
 import com.nanit.birthday.domain.usecases.DeleteBabyUseCase
 import com.nanit.birthday.domain.usecases.GetBabyUseCase
+import com.nanit.birthday.domain.usecases.GetBirthdayDisplayDataUseCase
 import com.nanit.birthday.domain.usecases.ObserveBabyUseCase
 import com.nanit.birthday.domain.usecases.SaveBabyUseCase
 import com.nanit.birthday.domain.usecases.UpdateBabyBirthdayUseCase
@@ -29,6 +30,13 @@ object UseCaseModule {
         babyRepository: BabyRepository
     ): GetBabyUseCase {
         return GetBabyUseCase(babyRepository)
+    }
+
+    @Provides
+    fun provideGetBirthdayDisplayDataUseCase(
+        babyRepository: BabyRepository
+    ): GetBirthdayDisplayDataUseCase {
+        return GetBirthdayDisplayDataUseCase(babyRepository)
     }
 
     @Provides

@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nanit.birthday.core.Resource
 import com.nanit.birthday.domain.model.Baby
+import com.nanit.birthday.domain.model.BirthdayDisplayData
 import com.nanit.birthday.domain.usecases.GetBabyUseCase
+import com.nanit.birthday.domain.usecases.GetBirthdayDisplayDataUseCase
 import com.nanit.birthday.domain.usecases.ObserveBabyUseCase
 import com.nanit.birthday.domain.usecases.UpdateBabyBirthdayUseCase
 import com.nanit.birthday.domain.usecases.UpdateBabyNameUseCase
@@ -52,7 +54,8 @@ class DetailsViewModel @Inject constructor(
     private val observeBabyUseCase: ObserveBabyUseCase,
     private val updateBabyNameUseCase: UpdateBabyNameUseCase,
     private val updateBabyBirthdayUseCase: UpdateBabyBirthdayUseCase,
-    private val updateBabyPictureUseCase: UpdateBabyPictureUseCase
+    private val updateBabyPictureUseCase: UpdateBabyPictureUseCase,
+    private val getBabyBirthdayDisplayDataUseCase: GetBirthdayDisplayDataUseCase
 ) : ViewModel() {
 
     // UI State for the name field
@@ -74,6 +77,12 @@ class DetailsViewModel @Inject constructor(
     // Baby data state
     private val _babyState = MutableStateFlow<Baby?>(null)
     val babyState: StateFlow<Baby?> = _babyState.asStateFlow()
+
+    private val _birthdayDisplayData = MutableStateFlow<BirthdayDisplayData?>(null)
+    val birthdayDisplayData: StateFlow<BirthdayDisplayData?> = _birthdayDisplayData.asStateFlow()
+
+    private val _isBirthdayLoading = MutableStateFlow(false)
+    val isBirthdayLoading: StateFlow<Boolean> = _isBirthdayLoading.asStateFlow()
 
     init {
         observeBabyData()
@@ -203,6 +212,30 @@ class DetailsViewModel @Inject constructor(
                         }
                         is Resource.Error -> {
                             _isLoading.value = false
+                            _errorMessage.value = resource.message
+                        }
+                    }
+                }
+        }
+    }
+
+    fun loadBirthdayScreenData(onNavigateToBirthday: (BirthdayDisplayData) -> Unit) {
+        viewModelScope.launch {
+            _isBirthdayLoading.value = true
+            clearError()
+
+            getBabyBirthdayDisplayDataUseCase()
+                .collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {}
+                        is Resource.Success -> {
+                            _isBirthdayLoading.value = false
+                            val displayData = resource.data
+                            _birthdayDisplayData.value = displayData
+                            onNavigateToBirthday(displayData)
+                        }
+                        is Resource.Error -> {
+                            _isBirthdayLoading.value = false
                             _errorMessage.value = resource.message
                         }
                     }

@@ -35,6 +35,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import com.nanit.birthday.domain.model.BirthdayDisplayData
 import com.nanit.birthday.presentation.screens.details.components.DebugBabyInfo
 import com.nanit.birthday.presentation.screens.details.components.ImageSourceDialog
 import com.nanit.birthday.presentation.screens.details.components.PictureSection
@@ -61,12 +62,13 @@ import java.util.Locale
 fun DetailsScreen(
     modifier: Modifier = Modifier,
     viewModel: DetailsViewModel = hiltViewModel(),
-    onShowBirthdayScreen: () -> Unit = {}
+    onShowBirthdayScreen: (BirthdayDisplayData) -> Unit = {}
 ) {
     // ViewModel state collection
     val nameState by viewModel.nameState.collectAsState()
     val birthdayState by viewModel.birthdayState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isBirthdayLoading by viewModel.isBirthdayLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val babyState by viewModel.babyState.collectAsState()
 
@@ -134,7 +136,7 @@ fun DetailsScreen(
     // Form validation state
     val isButtonEnabled by remember {
         derivedStateOf {
-            nameState.trim().isNotEmpty() && birthdayState != null
+            nameState.trim().isNotEmpty() && birthdayState != null && !isLoading && !isBirthdayLoading
         }
     }
 
@@ -181,7 +183,6 @@ fun DetailsScreen(
         nameFocusRequester.requestFocus()
     }
 
-    // Main UI Layout
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
@@ -225,9 +226,10 @@ fun DetailsScreen(
             item {
                 ShowBirthdayButton(
                     enabled = isButtonEnabled,
+                    isLoading = isBirthdayLoading,
                     onClick = {
                         focusManager.clearFocus()
-                        onShowBirthdayScreen()
+                        viewModel.loadBirthdayScreenData(onShowBirthdayScreen)
                     }
                 )
             }
