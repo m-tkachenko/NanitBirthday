@@ -9,43 +9,55 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.LocalDate
 
 /**
- * Use case for saving/creating a baby profile.
+ * Use case for saving/creating a baby profile (partial or complete).
  *
  * Business rules:
- * - Name must not be blank and should be trimmed
- * - Name must be between 1-50 characters
- * - Birthday cannot be in the future
+ * - Name must be valid if provided (not blank, 1-50 characters)
+ * - Birthday cannot be in the future if provided
  * - Picture URI must be valid format if provided
- * - Returns Success when baby is saved successfully
- * - Returns Error with specific validation or system error messages
+ * - At least one field must be provided (not all null)
  */
 class SaveBabyUseCase(
     private val babyRepository: BabyRepository,
     private val babyValidator: BabyValidator
 ) {
     operator fun invoke(
-        name: String,
-        birthday: LocalDate,
+        name: String? = null,
+        birthday: LocalDate? = null,
         pictureUri: String? = null
     ) = flow<Resource<Unit>> {
         emit(Resource.Loading)
 
-        // Step 1: Validate input data
-        val validationResult = babyValidator.validateBabyData(name, birthday, pictureUri)
+        // Step 1: Clean and prepare input data
+        val cleanName = name?.trim()?.takeIf { it.isNotBlank() }
+        val cleanPictureUri = pictureUri?.trim()?.takeIf { it.isNotBlank() }
+
+        // Step 2: Validate that at least one field is provided
+        if (cleanName == null && birthday == null && cleanPictureUri == null) {
+            emit(Resource.Error("At least one field must be provided"))
+            return@flow
+        }
+
+        // Step 3: Validate provided fields
+        val validationResult = babyValidator.validateBabyData(
+            name = cleanName,
+            birthday = birthday,
+            pictureUri = cleanPictureUri
+        )
 
         if (validationResult.isFailure) {
             emit(Resource.Error(validationResult.errorMessage!!))
             return@flow
         }
 
-        // Step 2: Create baby with validated data
+        // Step 4: Create baby with provided data (other fields remain null)
         val baby = Baby.create(
-            name = name.trim(),
+            name = cleanName,
             birthday = birthday,
-            pictureUri = pictureUri?.trim()?.takeIf { it.isNotBlank() }
+            pictureUri = cleanPictureUri
         )
 
-        // Step 3: Save to repository
+        // Step 5: Save to repository
         emit(
             babyRepository
                 .saveBaby(baby)
@@ -59,6 +71,7 @@ class SaveBabyUseCase(
                             throwable = throwable
                         )
                     }
-                ))
+                )
+        )
     }
 }

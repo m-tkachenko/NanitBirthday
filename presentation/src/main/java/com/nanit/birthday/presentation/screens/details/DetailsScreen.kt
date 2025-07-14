@@ -24,16 +24,20 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,77 +56,111 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun DetailsScreen(
     modifier: Modifier = Modifier,
+    viewModel: DetailsViewModel = hiltViewModel(),
     onShowBirthdayScreen: () -> Unit = {}
 ) {
-    var name by rememberSaveable { mutableStateOf("") }
+    // Collect ViewModel states
+    val nameState by viewModel.nameState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val babyState by viewModel.babyState.collectAsState()
+
+    // Local UI state for non-persisted fields
     var birthday by rememberSaveable { mutableStateOf("") }
     var hasPicture by rememberSaveable { mutableStateOf(false) }
 
+    // Derived state for button enablement
     val isButtonEnabled by remember {
         derivedStateOf {
-            name.trim().isNotEmpty() && birthday.trim().isNotEmpty()
+            nameState.trim().isNotEmpty() && birthday.trim().isNotEmpty()
         }
     }
 
     val focusManager = LocalFocusManager.current
     val nameFocusRequester = remember { FocusRequester() }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .semantics {
-                contentDescription = "Baby details form"
-            },
-        contentPadding = PaddingValues(24.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        item {
-            AppTitleSection()
+    // Handle error messages
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
         }
+    }
 
-        item {
-            NameInputSection(
-                name = name,
-                onNameChange = { name = it },
-                focusRequester = nameFocusRequester
-            )
-        }
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .semantics {
+                    contentDescription = "Baby details form"
+                },
+            contentPadding = PaddingValues(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            item {
+                AppTitleSection()
+            }
 
-        item {
-            BirthdayInputSection(
-                birthday = birthday,
-                onBirthdayClick = {
-                    // TODO: Open date picker
-                    birthday = "01/01/2024" // Simulate for now
+            item {
+                NameInputSection(
+                    name = nameState,
+                    onNameChange = viewModel::updateName,
+                    focusRequester = nameFocusRequester,
+                    isLoading = isLoading
+                )
+            }
+
+            item {
+                BirthdayInputSection(
+                    birthday = birthday,
+                    onBirthdayClick = {
+                        // TODO: Open date picker
+                        birthday = "01/01/2024" // Simulate for now
+                    }
+                )
+            }
+
+            item {
+                PictureSection(
+                    hasPicture = hasPicture,
+                    onPictureChange = { hasPicture = it }
+                )
+            }
+
+            item {
+                ShowBirthdayButton(
+                    enabled = isButtonEnabled,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onShowBirthdayScreen()
+                    }
+                )
+            }
+
+            item {
+                FormValidationHint(visible = !isButtonEnabled)
+            }
+
+            // Debug info (remove in production)
+            item {
+                if (babyState != null) {
+                    DebugBabyInfo(baby = babyState!!)
                 }
-            )
+            }
         }
 
-        item {
-            PictureSection(
-                hasPicture = hasPicture,
-                onPictureChange = { hasPicture = it }
-            )
-        }
-
-        item {
-            ShowBirthdayButton(
-                enabled = isButtonEnabled,
-                onClick = {
-                    focusManager.clearFocus()
-                    onShowBirthdayScreen()
-                }
-            )
-        }
-
-        item {
-            FormValidationHint(visible = !isButtonEnabled)
-        }
+        // Snackbar for error messages
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -148,7 +186,8 @@ private fun AppTitleSection() {
 private fun NameInputSection(
     name: String,
     onNameChange: (String) -> Unit,
-    focusRequester: FocusRequester
+    focusRequester: FocusRequester,
+    isLoading: Boolean
 ) {
     OutlinedTextField(
         value = name,
@@ -159,6 +198,15 @@ private fun NameInputSection(
             .fillMaxWidth()
             .focusRequester(focusRequester),
         singleLine = true,
+        enabled = !isLoading,
+        trailingIcon = {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            }
+        },
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             focusedLabelColor = MaterialTheme.colorScheme.primary
@@ -331,6 +379,42 @@ private fun FormValidationHint(visible: Boolean) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
+        )
+    }
+}
+
+@Composable
+private fun DebugBabyInfo(baby: com.nanit.birthday.domain.model.Baby) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant,
+                RoundedCornerShape(8.dp)
+            )
+            .padding(12.dp)
+    ) {
+        Text(
+            text = "Debug Info:",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "ID: ${baby.id}",
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            text = "Name: ${baby.name}",
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            text = "Birthday: ${baby.birthday}",
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            text = "Picture: ${baby.pictureUri ?: "None"}",
+            style = MaterialTheme.typography.bodySmall
         )
     }
 }

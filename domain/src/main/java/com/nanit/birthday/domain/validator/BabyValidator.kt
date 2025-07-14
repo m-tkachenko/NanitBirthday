@@ -31,23 +31,32 @@ class BabyValidator() {
      * @return ValidationResult with success or specific error message
      */
     fun validateBabyData(
-        name: String,
-        birthday: LocalDate,
+        name: String? = null,
+        birthday: LocalDate? = null,
         pictureUri: String? = null
     ): ValidationResult {
         // Validate name
-        validateName(name).let { result ->
-            if (result.isFailure) return result
+        name?.let { nameValue ->
+            validateName(nameValue).let { result ->
+                if (result.isFailure)
+                    return result
+            }
         }
 
         // Validate birthday
-        validateBirthday(birthday).let { result ->
-            if (result.isFailure) return result
+        birthday?.let { birthdayValue ->
+            validateBirthday(birthdayValue).let { result ->
+                if (result.isFailure)
+                    return result
+            }
         }
 
         // Validate picture URI if provided
-        validatePictureUri(pictureUri).let { result ->
-            if (result.isFailure) return result
+        pictureUri?.let { pictureValue ->
+            validatePictureUri(pictureValue).let { result ->
+                if (result.isFailure)
+                    return result
+            }
         }
 
         return ValidationResult.Success

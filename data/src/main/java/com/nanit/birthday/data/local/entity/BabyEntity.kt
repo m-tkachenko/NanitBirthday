@@ -19,10 +19,10 @@ data class BabyEntity(
     val id: Long = SINGLE_BABY_ID,
 
     @ColumnInfo(name = "name")
-    val name: String,
+    val name: String? = null,
 
     @ColumnInfo(name = "birthday")
-    val birthday: LocalDate,
+    val birthday: LocalDate? = null,
 
     @ColumnInfo(name = "picture_uri")
     val pictureUri: String? = null,

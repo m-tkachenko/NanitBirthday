@@ -67,6 +67,9 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
 
+    // Date/time utilities
+    implementation(libs.kotlinx.datetime)
+
     // Image loading
     implementation(libs.coil.compose)
 
