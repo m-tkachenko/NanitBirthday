@@ -17,49 +17,49 @@ import kotlinx.datetime.LocalDate
  * - Clear documentation of expected behavior
  */
 interface BabyRepository {
+
     /**
      * Observes the baby profile reactively.
      *
-     * @return Flow emitting Baby updates or null if no baby exists
+     * @return Flow emitting Result with Baby or null
      */
-    fun observeBaby(): Flow<Baby?>
+    fun observeBaby(): Flow<Result<Baby?>>
 
     /**
      * Gets the current baby profile.
      *
-     * @return Current Baby or null if no profile exists
+     * @return Result with Baby or null
      */
-    suspend fun getBaby(): Baby?
+    suspend fun getBaby(): Result<Baby?>
 
     /**
-     * Saves a complete baby profile.
-     * Creates new profile or updates existing one.
+     * Saves or updates baby profile.
      *
-     * @param baby Complete baby data to save
-     * @return Result indicating success or failure with error details
+     * @param baby Baby to save
+     * @return Result indicating success or failure
      */
     suspend fun saveBaby(baby: Baby): Result<Unit>
 
     /**
-     * Updates baby's name only.
+     * Updates baby's name.
      *
-     * @param updatedName New baby name
+     * @param updatedName New name (will be trimmed)
      * @return Result indicating success or failure
      */
-    suspend fun updateBabyByName(updatedName: String): Result<Unit>
+    suspend fun updateBabyName(updatedName: String): Result<Unit>
 
     /**
-     * Updates baby's birthday only.
+     * Updates baby's birthday.
      *
-     * @param birthday New birthday date
+     * @param updatedBirthday New birthday
      * @return Result indicating success or failure
      */
     suspend fun updateBabyBirthday(updatedBirthday: LocalDate): Result<Unit>
 
     /**
-     * Updates baby's picture only.
+     * Updates baby's picture.
      *
-     * @param pictureUri New picture URI or null to remove picture
+     * @param updatedPictureUri New picture URI or null to remove
      * @return Result indicating success or failure
      */
     suspend fun updateBabyPicture(updatedPictureUri: String?): Result<Unit>
@@ -67,9 +67,9 @@ interface BabyRepository {
     /**
      * Checks if baby profile exists.
      *
-     * @return true if baby profile exists, false otherwise
+     * @return Result with boolean
      */
-    suspend fun babyExists(): Boolean
+    suspend fun babyExists(): Result<Boolean>
 
     /**
      * Deletes the baby profile.

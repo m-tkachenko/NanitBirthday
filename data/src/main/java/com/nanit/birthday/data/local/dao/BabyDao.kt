@@ -21,7 +21,7 @@ interface BabyDao {
      * @return Flow of BabyEntity or null if no baby exists
      */
     @Query("SELECT * FROM baby WHERE id = :id LIMIT 1")
-    fun observeBaby(id: Long): Flow<BabyEntity>
+    fun observeBaby(id: Long): Flow<BabyEntity?>
 
     /**
      * Gets the baby profile.
