@@ -7,6 +7,10 @@ import com.nanit.birthday.domain.repository.BabyRepository
 import com.nanit.birthday.domain.validator.BabyValidator
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * Use case for updating baby's birthday or creating new incomplete baby.
@@ -22,8 +26,14 @@ class UpdateBabyBirthdayUseCase(
     private val babyRepository: BabyRepository,
     private val babyValidator: BabyValidator
 ) {
-    operator fun invoke(newBirthday: LocalDate) = flow<Resource<Unit>> {
+    @OptIn(ExperimentalTime::class)
+    operator fun invoke(newBirthdayInMillis: Long) = flow<Resource<Unit>> {
         emit(Resource.Loading)
+
+        val newBirthday = Instant
+            .fromEpochMilliseconds(newBirthdayInMillis)
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .date
 
         // Step 1: Validate new birthday using validator
         val validationResult = babyValidator.validateBirthday(newBirthday)

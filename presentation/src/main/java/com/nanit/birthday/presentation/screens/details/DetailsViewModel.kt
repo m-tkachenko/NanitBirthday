@@ -6,6 +6,7 @@ import com.nanit.birthday.core.Resource
 import com.nanit.birthday.domain.model.Baby
 import com.nanit.birthday.domain.usecases.GetBabyUseCase
 import com.nanit.birthday.domain.usecases.ObserveBabyUseCase
+import com.nanit.birthday.domain.usecases.UpdateBabyBirthdayUseCase
 import com.nanit.birthday.domain.usecases.UpdateBabyNameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
@@ -19,7 +20,11 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import javax.inject.Inject
+import kotlin.time.ExperimentalTime
 
 /**
  * ViewModel for the Details screen.
@@ -27,6 +32,7 @@ import javax.inject.Inject
  * Responsibilities:
  * - Manage UI state for baby details form
  * - Handle name input with automatic saving (debounced)
+ * - Handle birthday updates with immediate saving
  * - Load existing baby data on initialization
  * - Provide reactive updates when baby data changes
  */
@@ -35,12 +41,17 @@ import javax.inject.Inject
 class DetailsViewModel @Inject constructor(
     private val getBabyUseCase: GetBabyUseCase,
     private val observeBabyUseCase: ObserveBabyUseCase,
-    private val updateBabyNameUseCase: UpdateBabyNameUseCase
+    private val updateBabyNameUseCase: UpdateBabyNameUseCase,
+    private val updateBabyBirthdayUseCase: UpdateBabyBirthdayUseCase
 ) : ViewModel() {
 
     // UI State for the name field
     private val _nameState = MutableStateFlow("")
     val nameState: StateFlow<String> = _nameState.asStateFlow()
+
+    // UI State for the birthday field (as milliseconds for date picker)
+    private val _birthdayState = MutableStateFlow<Long?>(null)
+    val birthdayState: StateFlow<Long?> = _birthdayState.asStateFlow()
 
     // Loading state for operations
     private val _isLoading = MutableStateFlow(false)
@@ -71,8 +82,18 @@ class DetailsViewModel @Inject constructor(
      */
     fun updateName(newName: String) {
         _nameState.value = newName
-        // Clear any previous error when user starts typing
-        _errorMessage.value = null
+        clearError()
+    }
+
+    /**
+     * Updates the birthday immediately when user selects a date.
+     */
+    fun updateBirthday(birthdayMillis: Long?) {
+        birthdayMillis?.let { millis ->
+            _birthdayState.value = millis
+            clearError()
+            saveBirthdayToRepository(millis)
+        }
     }
 
     /**
@@ -86,6 +107,7 @@ class DetailsViewModel @Inject constructor(
      * Observes baby data changes from the repository.
      * This ensures the UI stays in sync with the database.
      */
+    @OptIn(ExperimentalTime::class)
     private fun observeBabyData() {
         observeBabyUseCase()
             .onEach { resource ->
@@ -94,8 +116,15 @@ class DetailsViewModel @Inject constructor(
                     is Resource.Success -> {
                         _babyState.value = resource.data
                         resource.data?.let { baby ->
+                            // Update name state if different
                             if (_nameState.value != baby.name)
-                                _nameState.value = baby.name.toString()
+                                _nameState.value = baby.name ?: ""
+
+                            // Update birthday state if different
+                            val babyBirthdayMillis = baby.birthday.toMillis()
+                            if (_birthdayState.value != babyBirthdayMillis) {
+                                _birthdayState.value = babyBirthdayMillis
+                            }
                         }
                     }
                     is Resource.Error -> {
@@ -121,15 +150,14 @@ class DetailsViewModel @Inject constructor(
             .distinctUntilChanged()
             .onEach { trimmedName ->
                 val currentBaby = _babyState.value
-                if (currentBaby == null || currentBaby.name != trimmedName)
+                if (currentBaby == null || currentBaby.name != trimmedName) {
                     saveNameToRepository(trimmedName)
+                }
             }
             .launchIn(viewModelScope)
     }
 
-    /**
-     * Loads initial baby data when ViewModel is created.
-     */
+    @OptIn(ExperimentalTime::class)
     private fun loadInitialBabyData() {
         viewModelScope.launch {
             getBabyUseCase()
@@ -141,9 +169,10 @@ class DetailsViewModel @Inject constructor(
                         is Resource.Success -> {
                             _isLoading.value = false
                             _babyState.value = resource.data
-                            // Set initial name if baby exists
+                            // Set initial states if baby exists
                             resource.data?.let { baby ->
-                                _nameState.value = baby.name.toString()
+                                _nameState.value = baby.name ?: ""
+                                _birthdayState.value = baby.birthday.toMillis()
                             }
                         }
                         is Resource.Error -> {
@@ -155,21 +184,13 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Saves the name to the repository using the UpdateBabyNameUseCase.
-     * Handles the case where no baby exists yet by creating a minimal baby profile.
-     */
     private fun saveNameToRepository(name: String) {
         viewModelScope.launch {
             updateBabyNameUseCase(name)
                 .collect { resource ->
                     when (resource) {
-                        is Resource.Loading -> {
-                            // Don't show loading for auto-save operations
-                        }
-                        is Resource.Success -> {
-                            // Successfully saved - the reactive observer will update UI
-                        }
+                        is Resource.Loading -> {}
+                        is Resource.Success -> {}
                         is Resource.Error -> {
                             _errorMessage.value = resource.message
                         }
@@ -177,4 +198,25 @@ class DetailsViewModel @Inject constructor(
                 }
         }
     }
+
+    @OptIn(ExperimentalTime::class)
+    private fun saveBirthdayToRepository(birthdayMillis: Long) {
+        viewModelScope.launch {
+            updateBabyBirthdayUseCase(birthdayMillis)
+                .collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {}
+                        is Resource.Success -> {}
+                        is Resource.Error -> {
+                            _errorMessage.value = resource.message
+                        }
+                    }
+                }
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun LocalDate?.toMillis() =
+        this?.atStartOfDayIn(TimeZone.currentSystemDefault())?.toEpochMilliseconds()
+
 }

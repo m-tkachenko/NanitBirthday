@@ -25,16 +25,21 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,7 +62,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.text.SimpleDateFormat
+import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
     modifier: Modifier = Modifier,
@@ -66,18 +74,40 @@ fun DetailsScreen(
 ) {
     // Collect ViewModel states
     val nameState by viewModel.nameState.collectAsState()
+    val birthdayState by viewModel.birthdayState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val babyState by viewModel.babyState.collectAsState()
 
     // Local UI state for non-persisted fields
-    var birthday by rememberSaveable { mutableStateOf("") }
     var hasPicture by rememberSaveable { mutableStateOf(false) }
+    var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
+
+    // Date formatter for display
+    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+
+    // Format birthday for display
+    val birthdayDisplayText = remember(birthdayState) {
+        birthdayState?.let { millis ->
+            dateFormatter.format(millis)
+        } ?: ""
+    }
+
+    // Date picker state
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = birthdayState,
+        yearRange = 2010..2025,
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis <= System.currentTimeMillis()
+            }
+        }
+    )
 
     // Derived state for button enablement
     val isButtonEnabled by remember {
         derivedStateOf {
-            nameState.trim().isNotEmpty() && birthday.trim().isNotEmpty()
+            nameState.trim().isNotEmpty() && birthdayState != null
         }
     }
 
@@ -119,10 +149,10 @@ fun DetailsScreen(
 
             item {
                 BirthdayInputSection(
-                    birthday = birthday,
+                    birthday = birthdayDisplayText,
                     onBirthdayClick = {
-                        // TODO: Open date picker
-                        birthday = "01/01/2024" // Simulate for now
+                        focusManager.clearFocus()
+                        showDatePickerDialog = true
                     }
                 )
             }
@@ -161,6 +191,37 @@ fun DetailsScreen(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+    }
+
+    // Material3 Date Picker Dialog
+    if (showDatePickerDialog) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerDialog = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            viewModel.updateBirthday(millis)
+                        }
+                        showDatePickerDialog = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDatePickerDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(
+                state = datePickerState,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -221,7 +282,7 @@ private fun BirthdayInputSection(
 ) {
     OutlinedTextField(
         value = birthday,
-        onValueChange = { },
+        onValueChange = { }, // Read-only
         label = { Text("Birthday") },
         placeholder = { Text("Select birthday date") },
         modifier = Modifier
@@ -234,7 +295,7 @@ private fun BirthdayInputSection(
             ) {
                 Icon(
                     imageVector = Icons.Default.DateRange,
-                    contentDescription = null
+                    contentDescription = "Open date picker"
                 )
             }
         },
