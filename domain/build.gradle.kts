@@ -19,11 +19,11 @@ kotlin {
 dependencies {
     // Module dependencies
     implementation(project(":core"))
+    implementation(project(":data"))
 
     // Coroutines for async business logic
     implementation(libs.kotlinx.coroutines.core)
 
     // Date/time utilities
     implementation(libs.kotlinx.datetime)
-    implementation(project(":data"))
 }

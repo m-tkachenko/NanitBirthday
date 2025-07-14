@@ -1,6 +1,6 @@
 package com.nanit.birthday.data.local.source
 
-import com.nanit.birthday.data.local.LocalBabyDataSource
+import com.nanit.birthday.domain.source.LocalBabyDataSource
 import com.nanit.birthday.data.local.dao.BabyDao
 import com.nanit.birthday.data.mapper.toDomain
 import com.nanit.birthday.data.mapper.toEntity
