@@ -81,6 +81,12 @@ class BabyValidator() {
             trimmedName.length > MAX_NAME_LENGTH -> {
                 ValidationResult.Error("Baby name cannot exceed $MAX_NAME_LENGTH characters")
             }
+            !isValidNameFormat(trimmedName) -> {
+                ValidationResult.Error("Baby name can only contain letters and spaces")
+            }
+            hasConsecutiveSpaces(trimmedName) -> {
+                ValidationResult.Error("Baby name cannot have multiple spaces")
+            }
             else -> ValidationResult.Success
         }
     }
@@ -134,6 +140,32 @@ class BabyValidator() {
         return uri.matches(
             Regex("^(content://|file://|https?://|android\\.resource://).*", RegexOption.IGNORE_CASE)
         )
+    }
+
+    /**
+     * Validates that name contains only letters and spaces.
+     *
+     * Allowed characters:
+     * - Lowercase letters (a-z)
+     * - Uppercase letters (A-Z)
+     * - Single spaces between words
+     *
+     * @param name Trimmed name to validate
+     * @return true if name format is valid
+     */
+    private fun isValidNameFormat(name: String): Boolean {
+        // Only allow letters (a-z, A-Z) and single spaces
+        return name.matches(Regex("^[a-zA-Z]+(\\s[a-zA-Z]+)*$"))
+    }
+
+    /**
+     * Checks if name has multiple consecutive spaces.
+     *
+     * @param name Name to check
+     * @return true if name has consecutive spaces
+     */
+    private fun hasConsecutiveSpaces(name: String): Boolean {
+        return name.contains(Regex("\\s{2,}"))
     }
 
     companion object {

@@ -1,7 +1,6 @@
 package com.nanit.birthday.presentation.screens.details
 
 import android.Manifest
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,6 +85,7 @@ import com.google.accompanist.permissions.shouldShowRationale
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -130,7 +130,10 @@ fun DetailsScreen(
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { selectedImageUri = it }
+        uri?.let {
+            selectedImageUri = it
+            viewModel.updatePicture(uri)
+        }
     }
 
     // Camera launcher
@@ -139,6 +142,7 @@ fun DetailsScreen(
     ) { success: Boolean ->
         if (success) {
             selectedImageUri = tempImageUri
+            viewModel.updatePicture(tempImageUri)
         }
     }
 
@@ -189,6 +193,11 @@ fun DetailsScreen(
             snackbarHostState.showSnackbar(message)
             viewModel.clearError()
         }
+        babyState?.pictureUri?.let { storedUri ->
+            if (selectedImageUri == null) {
+                selectedImageUri = storedUri.toUri()
+            }
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -227,12 +236,11 @@ fun DetailsScreen(
 
             item {
                 PictureSection(
-                    selectedImageUri = selectedImageUri,
+                    selectedImageUri = selectedImageUri ?: babyState?.pictureUri?.toUri(),
                     onSelectPicture = {
                         focusManager.clearFocus()
                         showImageSourceDialog = true
-                    },
-                    onRemovePicture = { selectedImageUri = null }
+                    }
                 )
             }
 
@@ -463,8 +471,7 @@ private fun BirthdayInputSection(
 @Composable
 private fun PictureSection(
     selectedImageUri: Uri?,
-    onSelectPicture: () -> Unit,
-    onRemovePicture: () -> Unit
+    onSelectPicture: () -> Unit
 ) {
     val cardShape = RoundedCornerShape(12.dp)
     val backgroundColor = if (selectedImageUri != null)
@@ -496,8 +503,7 @@ private fun PictureSection(
             } else {
                 PictureSelectedContent(
                     imageUri = selectedImageUri,
-                    onChangePicture = onSelectPicture,
-                    onRemovePicture = onRemovePicture
+                    onChangePicture = onSelectPicture
                 )
             }
         }
@@ -550,8 +556,7 @@ private fun NoPictureContent(onSelectPicture: () -> Unit) {
 @Composable
 private fun PictureSelectedContent(
     imageUri: Uri,
-    onChangePicture: () -> Unit,
-    onRemovePicture: () -> Unit
+    onChangePicture: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -579,18 +584,12 @@ private fun PictureSelectedContent(
         )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.Center
         ) {
             TextButton(
                 onClick = onChangePicture
             ) {
                 Text("Change")
-            }
-
-            TextButton(
-                onClick = onRemovePicture
-            ) {
-                Text("Remove")
             }
         }
     }

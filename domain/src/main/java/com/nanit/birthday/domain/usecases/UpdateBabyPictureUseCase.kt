@@ -49,15 +49,12 @@ class UpdateBabyPictureUseCase(
 
         // Step 3: Either update existing baby or create new partial baby
         val result = if (babyExists) {
-            // Update existing baby's picture only
             babyRepository.updateBabyPicture(cleanPictureUri)
         } else {
-            // Create new baby with only picture field set (if URI is not null)
             if (cleanPictureUri != null) {
                 val partialBaby = Baby.withPicture(cleanPictureUri)
                 babyRepository.saveBaby(partialBaby)
             } else {
-                // Don't create baby for null picture - nothing to save
                 Result.success(Unit)
             }
         }
