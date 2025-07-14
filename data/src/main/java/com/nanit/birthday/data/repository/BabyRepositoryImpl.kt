@@ -1,5 +1,6 @@
 package com.nanit.birthday.data.repository
 
+import com.nanit.birthday.data.di.IoDispatcher
 import com.nanit.birthday.data.local.dao.BabyDao
 import com.nanit.birthday.data.mapper.toDomain
 import com.nanit.birthday.data.mapper.toEntity
@@ -29,7 +30,7 @@ import javax.inject.Singleton
 @Singleton
 class BabyRepositoryImpl @Inject constructor(
     private val babyDao: BabyDao,
-    private val ioDispatcher: CoroutineDispatcher
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : BabyRepository {
     override fun observeBaby(): Flow<Result<Baby?>> =
         babyDao.observeBaby(Baby.SINGLE_BABY_ID)
