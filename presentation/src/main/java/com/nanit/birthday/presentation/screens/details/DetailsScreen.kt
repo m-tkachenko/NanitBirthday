@@ -1,5 +1,10 @@
 package com.nanit.birthday.presentation.screens.details
 
+import android.Manifest
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -9,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,12 +24,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -54,6 +66,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -61,11 +75,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun DetailsScreen(
     modifier: Modifier = Modifier,
@@ -79,9 +101,55 @@ fun DetailsScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val babyState by viewModel.babyState.collectAsState()
 
-    // Local UI state for non-persisted fields
-    var hasPicture by rememberSaveable { mutableStateOf(false) }
+    // Local UI state for camera/gallery functionality
+    var selectedImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var showImageSourceDialog by rememberSaveable { mutableStateOf(false) }
     var showDatePickerDialog by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
+
+    // Permission state for camera
+    val cameraPermissionState = rememberPermissionState(
+        permission = Manifest.permission.CAMERA
+    )
+
+    // Create temporary file for camera capture
+    val tempImageFile = remember {
+        File(context.cacheDir, "temp_baby_photo_${System.currentTimeMillis()}.jpg")
+    }
+
+    val tempImageUri = remember {
+        FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            tempImageFile
+        )
+    }
+
+    // Gallery launcher
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedImageUri = it }
+    }
+
+    // Camera launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            selectedImageUri = tempImageUri
+        }
+    }
+
+    // Permission request launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            cameraLauncher.launch(tempImageUri)
+        }
+    }
 
     // Date formatter for display
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
@@ -159,8 +227,12 @@ fun DetailsScreen(
 
             item {
                 PictureSection(
-                    hasPicture = hasPicture,
-                    onPictureChange = { hasPicture = it }
+                    selectedImageUri = selectedImageUri,
+                    onSelectPicture = {
+                        focusManager.clearFocus()
+                        showImageSourceDialog = true
+                    },
+                    onRemovePicture = { selectedImageUri = null }
                 )
             }
 
@@ -190,6 +262,31 @@ fun DetailsScreen(
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+
+    // Image Source Selection Dialog
+    if (showImageSourceDialog) {
+        ImageSourceDialog(
+            onDismiss = { showImageSourceDialog = false },
+            onGallerySelected = {
+                showImageSourceDialog = false
+                galleryLauncher.launch("image/*")
+            },
+            onCameraSelected = {
+                showImageSourceDialog = false
+                when {
+                    cameraPermissionState.status.isGranted -> {
+                        cameraLauncher.launch(tempImageUri)
+                    }
+                    cameraPermissionState.status.shouldShowRationale -> {
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                    else -> {
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                }
+            }
         )
     }
 
@@ -227,6 +324,63 @@ fun DetailsScreen(
     LaunchedEffect(Unit) {
         nameFocusRequester.requestFocus()
     }
+}
+
+@Composable
+private fun ImageSourceDialog(
+    onDismiss: () -> Unit,
+    onGallerySelected: () -> Unit,
+    onCameraSelected: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Select Photo Source",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Text(
+                text = "Choose how you want to add a photo for your baby",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(
+                    onClick = onGallerySelected
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Photo,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Gallery")
+                }
+
+                FilledTonalButton(
+                    onClick = onCameraSelected
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Camera")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -308,34 +462,43 @@ private fun BirthdayInputSection(
 
 @Composable
 private fun PictureSection(
-    hasPicture: Boolean,
-    onPictureChange: (Boolean) -> Unit
+    selectedImageUri: Uri?,
+    onSelectPicture: () -> Unit,
+    onRemovePicture: () -> Unit
 ) {
     val cardShape = RoundedCornerShape(12.dp)
-    val backgroundColor = if (hasPicture)
+    val backgroundColor = if (selectedImageUri != null)
         MaterialTheme.colorScheme.primaryContainer
     else
         MaterialTheme.colorScheme.surfaceContainerHigh
 
-    Box(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 200.dp)
-            .clip(cardShape)
-            .background(backgroundColor)
             .animateContentSize(),
-        contentAlignment = Alignment.Center
+        shape = cardShape,
+        colors = CardDefaults.cardColors(
+            containerColor = backgroundColor
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (selectedImageUri != null) 4.dp else 2.dp
+        )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (!hasPicture) {
-                NoPictureContent(onSelectPicture = { onPictureChange(true) })
+            if (selectedImageUri == null) {
+                NoPictureContent(onSelectPicture = onSelectPicture)
             } else {
-                PictureSelectedContent(onChangePicture = { onPictureChange(false) })
+                PictureSelectedContent(
+                    imageUri = selectedImageUri,
+                    onChangePicture = onSelectPicture,
+                    onRemovePicture = onRemovePicture
+                )
             }
         }
     }
@@ -345,7 +508,7 @@ private fun PictureSection(
 private fun NoPictureContent(onSelectPicture: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Icon(
             imageVector = Icons.Default.PhotoCamera,
@@ -361,8 +524,17 @@ private fun NoPictureContent(onSelectPicture: () -> Unit) {
             textAlign = TextAlign.Center
         )
 
+        Text(
+            text = "Add a beautiful photo of your baby to make the birthday screen extra special!",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
         FilledTonalButton(
-            onClick = onSelectPicture
+            onClick = onSelectPicture,
+            modifier = Modifier.padding(top = 8.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
@@ -376,30 +548,50 @@ private fun NoPictureContent(onSelectPicture: () -> Unit) {
 }
 
 @Composable
-private fun PictureSelectedContent(onChangePicture: () -> Unit) {
+private fun PictureSelectedContent(
+    imageUri: Uri,
+    onChangePicture: () -> Unit,
+    onRemovePicture: () -> Unit
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.PhotoCamera,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.onPrimaryContainer
+        // Display the selected image
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(imageUri)
+                .crossfade(true)
+                .build(),
+            contentDescription = "Selected baby photo",
+            modifier = Modifier
+                .size(120.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
         )
 
         Text(
-            text = "Picture Selected ✓",
+            text = "Beautiful photo! ✨",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center
         )
 
-        TextButton(
-            onClick = onChangePicture
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Change Picture")
+            TextButton(
+                onClick = onChangePicture
+            ) {
+                Text("Change")
+            }
+
+            TextButton(
+                onClick = onRemovePicture
+            ) {
+                Text("Remove")
+            }
         }
     }
 }
