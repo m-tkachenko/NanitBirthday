@@ -31,7 +31,6 @@ class BabyRepositoryImpl @Inject constructor(
     private val babyDao: BabyDao,
     private val ioDispatcher: CoroutineDispatcher
 ) : BabyRepository {
-
     override fun observeBaby(): Flow<Result<Baby?>> =
         babyDao.observeBaby(Baby.SINGLE_BABY_ID)
             .map { entity ->

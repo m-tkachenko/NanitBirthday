@@ -14,3 +14,16 @@ sealed class BabyException: Exception() {
         override val cause = throwable
     }
 }
+
+fun Throwable.toUserMessage(): String =
+    when (this) {
+        is BabyException.DatabaseException -> {
+            "Unable to change baby profile. Please try again."
+        }
+        is BabyException.NotFound -> {
+            "Baby profile not found. Please try creating a new profile."
+        }
+        else -> {
+            "Something went wrong. Please try again later."
+        }
+    }
