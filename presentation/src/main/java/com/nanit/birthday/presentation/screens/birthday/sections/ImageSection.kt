@@ -2,42 +2,53 @@ package com.nanit.birthday.presentation.screens.birthday.sections
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import com.nanit.birthday.domain.model.AgeUnit
 import com.nanit.birthday.domain.model.BirthdayDisplayData
 import com.nanit.birthday.domain.model.BirthdayTheme
 import com.nanit.birthday.presentation.R
-import com.nanit.birthday.presentation.screens.birthday.theme.BirthdayConst
-import com.nanit.birthday.presentation.screens.birthday.toBabyPlaceholderBorderColor
-import com.nanit.birthday.presentation.screens.birthday.toBabyPlaceholderResource
+import com.nanit.birthday.presentation.screens.birthday.constants.BirthdayConst
+import com.nanit.birthday.presentation.screens.birthday.extensions.toBabyCameraButtonResource
+import com.nanit.birthday.presentation.screens.birthday.extensions.toBabyPlaceholderBorderColor
+import com.nanit.birthday.presentation.screens.birthday.extensions.toBabyPlaceholderResource
 
 @Composable
 fun ImageSection(
     birthdayData: BirthdayDisplayData,
-    imageLoader: ImageLoader?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCameraClick: () -> Unit,
+    imageLoader: ImageLoader?
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .padding(horizontal = BirthdayConst.Dimens.imageSectionHorizontalPadding)
     ) {
-        BabyImage(
+        EditableBabyImage(
             pictureUri = birthdayData.pictureUri,
+            onCameraClick = onCameraClick,
             theme = birthdayData.theme,
             imageLoader = imageLoader
         )
@@ -45,6 +56,63 @@ fun ImageSection(
         Spacer(modifier = Modifier.height(BirthdayConst.Dimens.spaceBetweenSections))
 
         NanitLogo()
+    }
+}
+
+@Composable
+private fun EditableBabyImage(
+    modifier: Modifier = Modifier,
+    imageLoader: ImageLoader?,
+    onCameraClick: () -> Unit,
+    theme: BirthdayTheme,
+    pictureUri: String?
+) {
+    Box(
+        modifier = modifier.size(BirthdayConst.Dimens.babyImageSize),
+        contentAlignment = Alignment.Center
+    ) {
+        BabyImage(
+            pictureUri = pictureUri,
+            theme = theme,
+            imageLoader = imageLoader,
+            modifier = Modifier.matchParentSize()
+        )
+
+        val imageRadius = BirthdayConst.Dimens.babyImageSize / 2
+        val offSet = imageRadius.value * 0.707f // cos45 degrees
+
+        CameraIconButton(
+            theme = theme,
+            onClick = onCameraClick,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(
+                    x = offSet.dp,
+                    y = -offSet.dp
+                )
+        )
+    }
+}
+
+@Composable
+private fun CameraIconButton(
+    theme: BirthdayTheme,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier.size(BirthdayConst.Dimens.cameraButtonSize),
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = Color.Transparent
+        )
+    ) {
+        Icon(
+            painter = painterResource(id = theme.toBabyCameraButtonResource()),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            tint = Color.Unspecified
+        )
     }
 }
 
@@ -58,7 +126,6 @@ private fun BabyImage(
     val borderColor = theme.toBabyPlaceholderBorderColor()
 
     val imageModifier = modifier
-        .size(BirthdayConst.Dimens.babyImageSize)
         .border(
             width = BirthdayConst.Dimens.babyImageBorderWidth,
             color = borderColor,
@@ -72,7 +139,7 @@ private fun BabyImage(
             contentDescription = null,
             imageLoader = imageLoader,
             modifier = imageModifier,
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
         )
     } else {
         Image(
@@ -106,7 +173,8 @@ private fun ImageSectionPreviewGreen() {
             pictureUri = null,
             theme = BirthdayTheme.GREEN
         ),
-        imageLoader = null
+        imageLoader = null,
+        onCameraClick = {}
     )
 }
 
@@ -121,6 +189,7 @@ private fun ImageSectionPreviewYellow() {
             pictureUri = null,
             theme = BirthdayTheme.YELLOW
         ),
-        imageLoader = null
+        imageLoader = null,
+        onCameraClick = {}
     )
 }

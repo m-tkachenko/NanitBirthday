@@ -37,7 +37,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.nanit.birthday.domain.model.BirthdayDisplayData
 import com.nanit.birthday.presentation.screens.details.components.DebugBabyInfo
-import com.nanit.birthday.presentation.screens.details.components.ImageSourceDialog
+import com.nanit.birthday.presentation.screens.components.ImageSourceDialog
 import com.nanit.birthday.presentation.screens.details.components.PictureSection
 import com.nanit.birthday.presentation.screens.details.sections.AppTitleSection
 import com.nanit.birthday.presentation.screens.details.sections.BirthdayInputSection

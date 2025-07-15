@@ -1,4 +1,4 @@
-package com.nanit.birthday.presentation.screens.birthday.theme
+package com.nanit.birthday.presentation.screens.birthday.constants
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -31,6 +31,7 @@ object BirthdayConst {
         val babyImageBorderWidth = 6.dp
         val nanitLogoSize = 64.dp
         val spaceBetweenSections = 15.dp
+        val cameraButtonSize = 36.dp
     }
 
     // Text Styles

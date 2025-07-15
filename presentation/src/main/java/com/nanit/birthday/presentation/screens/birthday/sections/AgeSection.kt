@@ -22,8 +22,8 @@ import com.nanit.birthday.domain.model.AgeUnit
 import com.nanit.birthday.domain.model.BirthdayDisplayData
 import com.nanit.birthday.domain.model.BirthdayTheme
 import com.nanit.birthday.presentation.R
-import com.nanit.birthday.presentation.screens.birthday.theme.BirthdayConst
-import com.nanit.birthday.presentation.screens.birthday.toNumberResource
+import com.nanit.birthday.presentation.screens.birthday.constants.BirthdayConst
+import com.nanit.birthday.presentation.screens.birthday.extensions.toNumberResource
 
 @Composable
 fun AgeSection(

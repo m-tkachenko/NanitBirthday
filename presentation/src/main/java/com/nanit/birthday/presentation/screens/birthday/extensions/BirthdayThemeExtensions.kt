@@ -1,4 +1,4 @@
-package com.nanit.birthday.presentation.screens.birthday
+package com.nanit.birthday.presentation.screens.birthday.extensions
 
 import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.Color
@@ -53,6 +53,12 @@ fun BirthdayTheme.toBabyPlaceholderBorderColor(): Color = when (this) {
     BirthdayTheme.GREEN -> BirthdayPlaceholderBorderGreen
     BirthdayTheme.YELLOW -> BirthdayPlaceholderBorderYellow
     BirthdayTheme.BLUE -> BirthdayPlaceholderBorderBlue
+}
+
+fun BirthdayTheme.toBabyCameraButtonResource(): Int = when(this) {
+    BirthdayTheme.GREEN -> R.drawable.add_picture_green
+    BirthdayTheme.YELLOW -> R.drawable.add_picture_yellow
+    BirthdayTheme.BLUE -> R.drawable.add_picture_blue
 }
 
 /**

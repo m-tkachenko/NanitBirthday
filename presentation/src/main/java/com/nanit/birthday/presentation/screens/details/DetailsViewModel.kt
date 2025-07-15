@@ -1,6 +1,5 @@
 package com.nanit.birthday.presentation.screens.details
 
-import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,9 +12,8 @@ import com.nanit.birthday.domain.usecases.ObserveBabyUseCase
 import com.nanit.birthday.domain.usecases.UpdateBabyBirthdayUseCase
 import com.nanit.birthday.domain.usecases.UpdateBabyNameUseCase
 import com.nanit.birthday.domain.usecases.UpdateBabyPictureUseCase
+import com.nanit.birthday.presentation.helper.ImageInternalStorageHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,12 +25,9 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
-import java.io.File
-import java.io.FileOutputStream
 import javax.inject.Inject
 import kotlin.time.ExperimentalTime
 
@@ -49,13 +44,13 @@ import kotlin.time.ExperimentalTime
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class DetailsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val getBabyUseCase: GetBabyUseCase,
-    private val observeBabyUseCase: ObserveBabyUseCase,
-    private val updateBabyNameUseCase: UpdateBabyNameUseCase,
+    private val getBabyBirthdayDisplayDataUseCase: GetBirthdayDisplayDataUseCase,
     private val updateBabyBirthdayUseCase: UpdateBabyBirthdayUseCase,
     private val updateBabyPictureUseCase: UpdateBabyPictureUseCase,
-    private val getBabyBirthdayDisplayDataUseCase: GetBirthdayDisplayDataUseCase
+    private val imageStorageHelper: ImageInternalStorageHelper,
+    private val updateBabyNameUseCase: UpdateBabyNameUseCase,
+    private val observeBabyUseCase: ObserveBabyUseCase,
+    private val getBabyUseCase: GetBabyUseCase
 ) : ViewModel() {
 
     // UI State for the name field
@@ -88,7 +83,10 @@ class DetailsViewModel @Inject constructor(
         observeBabyData()
         setupNameAutoSave()
         loadInitialBabyData()
-        cleanupOldTempFiles()
+
+        viewModelScope.launch {
+            imageStorageHelper.cleanupOldTempFiles()
+        }
     }
 
     /**
@@ -119,7 +117,7 @@ class DetailsViewModel @Inject constructor(
         } else {
             viewModelScope.launch {
                 _isLoading.value = true
-                val permanentUri = copyImageToInternalStorage(pictureUri)
+                val permanentUri = imageStorageHelper.copyImageToInternalStorage(pictureUri)
                 _isLoading.value = false
 
                 if (permanentUri != null) {
@@ -286,36 +284,6 @@ class DetailsViewModel @Inject constructor(
                         }
                     }
                 }
-        }
-    }
-
-    private suspend fun copyImageToInternalStorage(tempUri: Uri): String? {
-        return withContext(Dispatchers.IO) {
-            try {
-                val timestamp = System.currentTimeMillis()
-                val filename = "baby_photo_$timestamp.jpg"
-                val destinationFile = File(context.filesDir, filename)
-
-                context.contentResolver.openInputStream(tempUri)?.use { input ->
-                    FileOutputStream(destinationFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-
-                Uri.fromFile(destinationFile).toString()
-            } catch (_: Exception) {
-                null
-            }
-        }
-    }
-
-    private fun cleanupOldTempFiles() {
-        viewModelScope.launch(Dispatchers.IO) {
-            context.cacheDir.listFiles()?.forEach { file ->
-                if (file.name.startsWith("temp_baby_photo_")) {
-                    file.delete()
-                }
-            }
         }
     }
 

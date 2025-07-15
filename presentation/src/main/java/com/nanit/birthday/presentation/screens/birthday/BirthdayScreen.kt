@@ -30,9 +30,11 @@ import coil.decode.SvgDecoder
 import com.nanit.birthday.domain.model.AgeUnit
 import com.nanit.birthday.domain.model.BirthdayDisplayData
 import com.nanit.birthday.domain.model.BirthdayTheme
+import com.nanit.birthday.presentation.screens.birthday.constants.BirthdayConst
+import com.nanit.birthday.presentation.screens.birthday.extensions.toBackgroundColor
+import com.nanit.birthday.presentation.screens.birthday.extensions.toDecorationResource
 import com.nanit.birthday.presentation.screens.birthday.sections.AgeSection
 import com.nanit.birthday.presentation.screens.birthday.sections.ImageSection
-import com.nanit.birthday.presentation.screens.birthday.theme.BirthdayConst
 import com.nanit.birthday.presentation.theme.BirthdayDarkBlue
 
 /**
@@ -54,9 +56,9 @@ fun BirthdayScreen(
             null
 
     BirthdayContent(
+        onNavigateBack = onNavigateBack,
         birthdayData = birthdayData,
-        imageLoader = imageLoader,
-        onNavigateBack = onNavigateBack
+        imageLoader = imageLoader
     )
 }
 
@@ -86,6 +88,7 @@ private fun BirthdayContent(
             Spacer(modifier = Modifier.height(BirthdayConst.Dimens.spaceBetweenSections))
 
             ImageSection(
+                onCameraClick = { },
                 birthdayData = birthdayData,
                 imageLoader = imageLoader
             )

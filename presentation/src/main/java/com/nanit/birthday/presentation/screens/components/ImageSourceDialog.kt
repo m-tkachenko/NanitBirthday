@@ -1,4 +1,4 @@
-package com.nanit.birthday.presentation.screens.details.components
+package com.nanit.birthday.presentation.screens.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
