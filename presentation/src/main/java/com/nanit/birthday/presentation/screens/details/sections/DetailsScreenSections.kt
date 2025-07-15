@@ -111,7 +111,7 @@ fun BirthdayInputSection(
     // Date picker state with validation
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = birthdayState,
-        yearRange = 2010..2025,
+        yearRange = 2013..2025,
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 return utcTimeMillis <= System.currentTimeMillis()

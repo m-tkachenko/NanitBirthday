@@ -73,6 +73,7 @@ dependencies {
 
     // Image loading
     implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
 
     // Android core
     implementation(libs.androidx.core.ktx)
