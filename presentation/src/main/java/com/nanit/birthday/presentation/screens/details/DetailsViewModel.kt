@@ -61,6 +61,10 @@ class DetailsViewModel @Inject constructor(
     private val _birthdayState = MutableStateFlow<Long?>(null)
     val birthdayState: StateFlow<Long?> = _birthdayState.asStateFlow()
 
+    // UI State for the picture field
+    private val _pictureUriState = MutableStateFlow<String?>(null)
+    val pictureUriState: StateFlow<String?> = _pictureUriState.asStateFlow()
+
     // Loading state for operations
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -159,9 +163,12 @@ class DetailsViewModel @Inject constructor(
 
                             // Update birthday state if different
                             val babyBirthdayMillis = baby.birthday.toMillis()
-                            if (_birthdayState.value != babyBirthdayMillis) {
+                            if (_birthdayState.value != babyBirthdayMillis)
                                 _birthdayState.value = babyBirthdayMillis
-                            }
+
+                            // Update picture state if different
+                            if (_pictureUriState.value != baby.pictureUri)
+                                _pictureUriState.value = baby.pictureUri
                         }
                     }
                     is Resource.Error -> {

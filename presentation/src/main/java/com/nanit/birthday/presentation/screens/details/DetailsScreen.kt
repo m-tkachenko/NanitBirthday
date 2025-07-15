@@ -56,13 +56,13 @@ fun DetailsScreen(
     // ViewModel state collection
     val nameState by viewModel.nameState.collectAsState()
     val birthdayState by viewModel.birthdayState.collectAsState()
+    val pictureUriState by viewModel.pictureUriState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isBirthdayLoading by viewModel.isBirthdayLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val babyState by viewModel.babyState.collectAsState()
 
     // Local UI state for photo picker
-    var selectedImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var showPhotoPicker by rememberSaveable { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
@@ -90,7 +90,6 @@ fun DetailsScreen(
 
     val handlePhotoSelected = { uri: Uri? ->
         uri?.let {
-            selectedImageUri = it
             viewModel.updatePicture(uri)
         }
     }
@@ -104,14 +103,6 @@ fun DetailsScreen(
         errorMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             viewModel.clearError()
-        }
-    }
-
-    LaunchedEffect(babyState) {
-        babyState?.pictureUri?.let { storedUri ->
-            if (selectedImageUri == null) {
-                selectedImageUri = storedUri.toUri()
-            }
         }
     }
 
@@ -150,7 +141,7 @@ fun DetailsScreen(
 
             item {
                 PictureSection(
-                    selectedImageUri = selectedImageUri ?: babyState?.pictureUri?.toUri(),
+                    selectedImageUri = pictureUriState?.toUri(),
                     onSelectPicture = onSelectPicture
                 )
             }

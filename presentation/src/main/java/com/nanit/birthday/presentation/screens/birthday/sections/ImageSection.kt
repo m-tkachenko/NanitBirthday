@@ -36,7 +36,8 @@ import com.nanit.birthday.presentation.screens.birthday.extensions.toBabyPlaceho
 
 @Composable
 fun ImageSection(
-    birthdayData: BirthdayDisplayData,
+    birthdayTheme: BirthdayTheme,
+    babyPictureUri: String?,
     modifier: Modifier = Modifier,
     onCameraClick: () -> Unit,
     imageLoader: ImageLoader?
@@ -47,9 +48,9 @@ fun ImageSection(
             .padding(horizontal = BirthdayConst.Dimens.imageSectionHorizontalPadding)
     ) {
         EditableBabyImage(
-            pictureUri = birthdayData.pictureUri,
+            pictureUri = babyPictureUri,
             onCameraClick = onCameraClick,
-            theme = birthdayData.theme,
+            theme = birthdayTheme,
             imageLoader = imageLoader
         )
 
@@ -166,29 +167,8 @@ private fun NanitLogo(
 @Composable
 private fun ImageSectionPreviewGreen() {
     ImageSection(
-        birthdayData = BirthdayDisplayData(
-            babyName = "Emma",
-            ageNumber = 2,
-            ageUnit = AgeUnit.YEARS,
-            pictureUri = null,
-            theme = BirthdayTheme.GREEN
-        ),
-        imageLoader = null,
-        onCameraClick = {}
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ImageSectionPreviewYellow() {
-    ImageSection(
-        birthdayData = BirthdayDisplayData(
-            babyName = "Oliver",
-            ageNumber = 6,
-            ageUnit = AgeUnit.MONTHS,
-            pictureUri = null,
-            theme = BirthdayTheme.YELLOW
-        ),
+        birthdayTheme = BirthdayTheme.GREEN,
+        babyPictureUri = null,
         imageLoader = null,
         onCameraClick = {}
     )

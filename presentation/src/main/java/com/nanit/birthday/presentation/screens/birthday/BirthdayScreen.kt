@@ -68,8 +68,9 @@ fun BirthdayScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var selectedImageUri by rememberSaveable { mutableStateOf(birthdayData.pictureUri) }
     val imageLoader =
-        if (birthdayData.pictureUri != null)
+        if (selectedImageUri != null)
             rememberImageLoader()
         else
             null
@@ -80,6 +81,7 @@ fun BirthdayScreen(
 
     val handlePhotoSelected = { uri: Uri? ->
         uri?.let {
+            selectedImageUri = uri.toString()
             viewModel.updatePicture(uri)
         }
     }
@@ -93,10 +95,11 @@ fun BirthdayScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         BirthdayContent(
+            selectedImageUri = selectedImageUri,
             onNavigateBack = onNavigateBack,
+            onCameraClick = onCameraClick,
             birthdayData = birthdayData,
-            imageLoader = imageLoader,
-            onCameraClick = onCameraClick
+            imageLoader = imageLoader
         )
 
         SnackbarHost(
@@ -123,6 +126,7 @@ fun BirthdayScreen(
 private fun BirthdayContent(
     birthdayData: BirthdayDisplayData,
     imageLoader: ImageLoader?,
+    selectedImageUri: String?,
     onNavigateBack: () -> Unit,
     onCameraClick: () -> Unit
 ) {
@@ -147,7 +151,8 @@ private fun BirthdayContent(
 
             ImageSection(
                 onCameraClick = onCameraClick,
-                birthdayData = birthdayData,
+                birthdayTheme = birthdayData.theme,
+                babyPictureUri = selectedImageUri,
                 imageLoader = imageLoader
             )
         }
