@@ -18,4 +18,4 @@ val BirthdayPlaceholderBorderGreen = Color(0xFF6FC5AF)
 val BirthdayPlaceholderBorderYellow = Color(0xFFFEBE21)
 val BirthdayPlaceholderBorderBlue = Color(0xFF8BD3E4)
 
-val BirthdayDefaultTextColor = Color(0xFF394562)
+val BirthdayDarkBlue = Color(0xFF394562)

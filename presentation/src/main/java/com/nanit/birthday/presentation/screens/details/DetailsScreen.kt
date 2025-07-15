@@ -179,10 +179,6 @@ fun DetailsScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        nameFocusRequester.requestFocus()
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
