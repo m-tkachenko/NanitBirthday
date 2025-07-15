@@ -75,10 +75,6 @@ class DetailsViewModel @Inject constructor(
 
     // Baby data state
     private val _babyState = MutableStateFlow<Baby?>(null)
-    val babyState: StateFlow<Baby?> = _babyState.asStateFlow()
-
-    private val _birthdayDisplayData = MutableStateFlow<BirthdayDisplayData?>(null)
-    val birthdayDisplayData: StateFlow<BirthdayDisplayData?> = _birthdayDisplayData.asStateFlow()
 
     private val _isBirthdayLoading = MutableStateFlow(false)
     val isBirthdayLoading: StateFlow<Boolean> = _isBirthdayLoading.asStateFlow()
@@ -217,6 +213,7 @@ class DetailsViewModel @Inject constructor(
                             resource.data?.let { baby ->
                                 _nameState.value = baby.name ?: ""
                                 _birthdayState.value = baby.birthday.toMillis()
+                                _pictureUriState.value = baby.pictureUri
                             }
                         }
                         is Resource.Error -> {
@@ -240,7 +237,6 @@ class DetailsViewModel @Inject constructor(
                         is Resource.Success -> {
                             _isBirthdayLoading.value = false
                             val displayData = resource.data
-                            _birthdayDisplayData.value = displayData
                             onNavigateToBirthday(displayData)
                         }
                         is Resource.Error -> {

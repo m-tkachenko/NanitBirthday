@@ -28,7 +28,6 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nanit.birthday.domain.model.BirthdayDisplayData
 import com.nanit.birthday.presentation.components.PhotoPicker
-import com.nanit.birthday.presentation.screens.details.components.DebugBabyInfo
 import com.nanit.birthday.presentation.screens.details.components.PictureSection
 import com.nanit.birthday.presentation.screens.details.sections.AppTitleSection
 import com.nanit.birthday.presentation.screens.details.sections.BirthdayInputSection
@@ -60,7 +59,6 @@ fun DetailsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isBirthdayLoading by viewModel.isBirthdayLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    val babyState by viewModel.babyState.collectAsState()
 
     // Local UI state for photo picker
     var showPhotoPicker by rememberSaveable { mutableStateOf(false) }
@@ -159,13 +157,6 @@ fun DetailsScreen(
 
             item {
                 FormValidationHint(visible = !isButtonEnabled)
-            }
-
-            // Debug info (remove in production)
-            item {
-                babyState?.let { baby ->
-                    DebugBabyInfo(baby = baby)
-                }
             }
         }
 

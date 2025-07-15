@@ -196,30 +196,11 @@ fun ShowBirthdayButton(
             .height(56.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
-        if (isLoading) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Preparing Birthday...",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        } else {
-            Text(
-                text = "Show Birthday Screen",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+        Text(
+            text = "Show Birthday Screen",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
