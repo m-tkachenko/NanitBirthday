@@ -40,7 +40,8 @@ fun ImageSection(
     babyPictureUri: String?,
     modifier: Modifier = Modifier,
     onCameraClick: () -> Unit,
-    imageLoader: ImageLoader?
+    imageLoader: ImageLoader?,
+    showCameraIcon: Boolean = true
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -51,7 +52,8 @@ fun ImageSection(
             pictureUri = babyPictureUri,
             onCameraClick = onCameraClick,
             theme = birthdayTheme,
-            imageLoader = imageLoader
+            imageLoader = imageLoader,
+            showCameraIcon = showCameraIcon
         )
 
         Spacer(modifier = Modifier.height(BirthdayConst.Dimens.spaceBetweenSections))
@@ -66,7 +68,8 @@ private fun EditableBabyImage(
     imageLoader: ImageLoader?,
     onCameraClick: () -> Unit,
     theme: BirthdayTheme,
-    pictureUri: String?
+    pictureUri: String?,
+    showCameraIcon: Boolean = true
 ) {
     Box(
         modifier = modifier.size(BirthdayConst.Dimens.babyImageSize),
@@ -79,19 +82,21 @@ private fun EditableBabyImage(
             modifier = Modifier.matchParentSize()
         )
 
-        val imageRadius = BirthdayConst.Dimens.babyImageSize / 2
-        val offSet = imageRadius.value * 0.707f // cos45 degrees
+        if (showCameraIcon) {
+            val imageRadius = BirthdayConst.Dimens.babyImageSize / 2
+            val offSet = imageRadius.value * 0.707f // cos45 degrees
 
-        CameraIconButton(
-            theme = theme,
-            onClick = onCameraClick,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .offset(
-                    x = offSet.dp,
-                    y = -offSet.dp
-                )
-        )
+            CameraIconButton(
+                theme = theme,
+                onClick = onCameraClick,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(
+                        x = offSet.dp,
+                        y = -offSet.dp
+                    )
+            )
+        }
     }
 }
 

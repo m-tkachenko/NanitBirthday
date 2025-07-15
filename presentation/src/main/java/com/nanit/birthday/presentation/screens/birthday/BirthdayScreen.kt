@@ -1,6 +1,7 @@
 package com.nanit.birthday.presentation.screens.birthday
 
 import android.net.Uri
+import android.view.View
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -29,11 +31,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.ImageLoader
 import coil.decode.SvgDecoder
@@ -68,6 +76,9 @@ fun BirthdayScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val isCapturingForShare by viewModel.isCapturingForShare.collectAsState()
+    val graphicsLayer = rememberGraphicsLayer()
+
     var selectedImageUri by rememberSaveable { mutableStateOf(birthdayData.pictureUri) }
     val imageLoader =
         if (selectedImageUri != null)
@@ -77,6 +88,16 @@ fun BirthdayScreen(
 
     val onCameraClick = {
         showPhotoPicker = true
+    }
+
+    val onShareClick = {
+        viewModel.shareBirthday {
+            try {
+                graphicsLayer.toImageBitmap().asAndroidBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        }
     }
 
     val handlePhotoSelected = { uri: Uri? ->
@@ -95,9 +116,12 @@ fun BirthdayScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         BirthdayContent(
+            isCapturingForShare = isCapturingForShare,
             selectedImageUri = selectedImageUri,
             onNavigateBack = onNavigateBack,
             onCameraClick = onCameraClick,
+            graphicsLayer = graphicsLayer,
+            onShareClick = onShareClick,
             birthdayData = birthdayData,
             imageLoader = imageLoader
         )
@@ -125,13 +149,22 @@ fun BirthdayScreen(
 @Composable
 private fun BirthdayContent(
     birthdayData: BirthdayDisplayData,
+    isCapturingForShare: Boolean,
+    graphicsLayer: GraphicsLayer,
+    onNavigateBack: () -> Unit,
     imageLoader: ImageLoader?,
     selectedImageUri: String?,
-    onNavigateBack: () -> Unit,
-    onCameraClick: () -> Unit
+    onCameraClick: () -> Unit,
+    onShareClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
+            .drawWithContent {
+                graphicsLayer.record {
+                    this@drawWithContent.drawContent()
+                }
+                drawContent()
+            }
             .fillMaxSize()
             .background(birthdayData.theme.toBackgroundColor())
     ) {
@@ -153,7 +186,8 @@ private fun BirthdayContent(
                 onCameraClick = onCameraClick,
                 birthdayTheme = birthdayData.theme,
                 babyPictureUri = selectedImageUri,
-                imageLoader = imageLoader
+                imageLoader = imageLoader,
+                showCameraIcon = isCapturingForShare.not()
             )
         }
 
@@ -166,25 +200,48 @@ private fun BirthdayContent(
             contentScale = ContentScale.FillHeight
         )
 
-        IconButton(
-            onClick = onNavigateBack,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(
-                    top = 10.dp,
-                    start = 12.dp
+        if (isCapturingForShare.not()) {
+            IconButton(
+                onClick = onNavigateBack,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(
+                        top = 10.dp,
+                        start = 12.dp
+                    )
+                    .statusBarsPadding()
+                    .size(48.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = BirthdayDarkBlue
                 )
-                .statusBarsPadding()
-                .size(48.dp),
-            colors = IconButtonDefaults.iconButtonColors(
-                contentColor = BirthdayDarkBlue
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Close birthday screen",
-                modifier = Modifier.size(32.dp)
-            )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            IconButton(
+                onClick = onShareClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(
+                        top = 10.dp,
+                        end = 12.dp
+                    )
+                    .statusBarsPadding()
+                    .size(48.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = BirthdayDarkBlue
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
         }
     }
 }
