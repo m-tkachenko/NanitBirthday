@@ -136,6 +136,10 @@ class DetailsViewModel @Inject constructor(
         _errorMessage.value = null
     }
 
+    fun setError(message: String) {
+        _errorMessage.value = message
+    }
+
     /**
      * Observes baby data changes from the repository.
      * This ensures the UI stays in sync with the database.
